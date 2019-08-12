@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Jasily.ViewModel.Internal;
@@ -17,7 +18,7 @@ namespace Jasily.ViewModel
         }
 
         [NotifyPropertyChangedInvocator]
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = "")
+        protected bool ChangeModelProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<T>.Default.Equals(field, newValue)) return false;
             field = newValue;

@@ -13,14 +13,6 @@ namespace Jasily.ViewModel
         public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]
-        protected void NotifyPropertyChanged<T>([NotNull] Expression<Func<T, object>> propertySelector)
-        {
-            if (propertySelector == null) throw new ArgumentNullException(nameof(propertySelector));
-            //var propertyName = KeySelector.SelectProperty(propertySelector);
-            //this.PropertyChanged?.Invoke(this, propertyName);
-        }
-
-        [NotifyPropertyChangedInvocator]
         protected void NotifyPropertyChanged([NotNull, CallerMemberName] string propertyName = "")
         {
             if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));

@@ -10,10 +10,8 @@ namespace Jasily.ViewModel.Internal
     {
         private static readonly ConcurrentDictionary<Type, RefreshPropertiesMapper> Store 
             = new ConcurrentDictionary<Type, RefreshPropertiesMapper>();
-        private static readonly Func<Type, RefreshPropertiesMapper> Factory = Create;
+        private static readonly Func<Type, RefreshPropertiesMapper> Factory = type => new RefreshPropertiesMapper(type);
 
         public static RefreshPropertiesMapper FromType(Type type) => Store.GetOrAdd(type, Factory);
-
-        private static RefreshPropertiesMapper Create(Type type) => new RefreshPropertiesMapper(type);
     }
 }
