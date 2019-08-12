@@ -16,14 +16,6 @@ namespace Jasily.ViewModel.Extensions
         }
 
         public static void Invoke([NotNull] this PropertyChangedEventHandler handler, object sender,
-            string propertyName1, string propertyName2)
-        {
-            if (handler == null) throw new ArgumentNullException(nameof(handler));
-            handler.Invoke(sender, new PropertyChangedEventArgs(propertyName1));
-            handler.Invoke(sender, new PropertyChangedEventArgs(propertyName2));
-        }
-
-        public static void Invoke([NotNull] this PropertyChangedEventHandler handler, object sender,
             [NotNull] params string[] propertyNames)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
