@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Jasily.ViewModel</name>
+    </assembly>
+    <members>
+        <member name="M:Jasily.ViewModel.BaseViewModel.RefreshProperties">
+            <summary>
+            Raise <see cref="E:System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/> with all properties that has attribute <see cref="T:Jasily.ViewModel.ModelPropertyAttribute"/>
+            </summary>
+        </member>
+        <member name="M:Jasily.ViewModel.ModelProperty`1.ChangeValue(`0)">
+            <summary>
+            Set value and raise <see cref="E:System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/>.
+            </summary>
+            <param name="value"></param>
+        </member>
+        <member name="T:Jasily.ViewModel.ModelPropertyAttribute">
+            <summary>
+            Indicates that the property should be raises by <see cref="E:System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/>
+            when you call <see cref="M:Jasily.ViewModel.BaseViewModel.RefreshProperties"/>.
+            </summary>
+        </member>
+        <member name="P:Jasily.ViewModel.ModelPropertyAttribute.Order">
+            <summary>
+            order by asc
+            </summary>
+        </member>
+        <member name="T:Jasily.ViewModel.NotifyPropertyChangedObject">
+            <summary>
+            The base class for interface <see cref="T:System.ComponentModel.INotifyPropertyChanged"/>.
+            </summary>
+        </member>
+    </members>
+</doc>
