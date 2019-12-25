@@ -12,7 +12,7 @@ namespace Jasily.ViewModel
     /// <summary>
     /// The base class for interface <see cref="INotifyPropertyChanged"/>.
     /// </summary>
-    public class NotifyPropertyChangedObject : INotifyPropertyChanged, IDisposable
+    public class NotifyPropertyChangedObject : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -61,10 +61,5 @@ namespace Jasily.ViewModel
         }
 
         protected void ClearPropertyChangedInvocationList() => this.PropertyChanged = null;
-
-        public void Dispose()
-        {
-            this.PropertyChanged = null;
-        }
     }
 }
