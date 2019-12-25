@@ -6,7 +6,16 @@
     <members>
         <member name="M:Jasily.ViewModel.BaseViewModel.RefreshProperties">
             <summary>
-            Raise <see cref="E:System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/> with all properties that has attribute <see cref="T:Jasily.ViewModel.ModelPropertyAttribute"/>
+            Raise <see cref="E:System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/> with all properties 
+            that has attribute <see cref="T:Jasily.ViewModel.ModelPropertyAttribute"/> 
+            in this instance.
+            </summary>
+        </member>
+        <member name="M:Jasily.ViewModel.BaseViewModel.RefreshProperties(System.Int32)">
+            <summary>
+            Raise <see cref="E:System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/> with all properties 
+            that has specials group attribute <see cref="T:Jasily.ViewModel.ModelPropertyAttribute"/>
+            in this instance.
             </summary>
         </member>
         <member name="M:Jasily.ViewModel.ModelProperty`1.ChangeValue(`0)">

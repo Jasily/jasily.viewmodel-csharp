@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text;
 using JetBrains.Annotations;
 
 namespace Jasily.ViewModel.Extensions
