@@ -10,6 +10,8 @@ namespace Jasily.ViewModel
     [AttributeUsage(AttributeTargets.Property)]
     public class ModelPropertyAttribute : Attribute
     {
+        public int Group { get; set; }
+
         /// <summary>
         /// order by asc
         /// </summary>
