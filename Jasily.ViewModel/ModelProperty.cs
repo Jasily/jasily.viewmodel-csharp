@@ -11,6 +11,9 @@ namespace Jasily.ViewModel
             this._value = value;
         }
 
+        /// <summary>
+        /// Gets or set <see cref="Value"/> without riase <see cref="INotifyPropertyChanged.PropertyChanged"/>.
+        /// </summary>
         public T Value
         {
             get => this._value;

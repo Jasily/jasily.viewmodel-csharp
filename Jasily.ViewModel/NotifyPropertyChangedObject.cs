@@ -14,6 +14,11 @@ namespace Jasily.ViewModel
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="propertyName"></param>
+        /// <exception cref="ArgumentNullException">throw when <paramref name="propertyName"/> is null.</exception>
         [NotifyPropertyChangedInvocator]
         protected void NotifyPropertyChanged([NotNull, CallerMemberName] string propertyName = "")
         {
@@ -21,6 +26,11 @@ namespace Jasily.ViewModel
             this.PropertyChanged?.Invoke(this, propertyName);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="propertyNames"></param>
+        /// <exception cref="ArgumentNullException">throw when <paramref name="propertyNames"/> is null.</exception>
         [NotifyPropertyChangedInvocator]
         protected void NotifyPropertyChanged([NotNull, ItemNotNull] params string[] propertyNames)
         {
@@ -28,6 +38,11 @@ namespace Jasily.ViewModel
             this.PropertyChanged?.Invoke(this, propertyNames);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="propertyNames"></param>
+        /// <exception cref="ArgumentNullException">throw when <paramref name="propertyNames"/> is null.</exception>
         [NotifyPropertyChangedInvocator]
         protected void NotifyPropertyChanged([NotNull, ItemNotNull] IEnumerable<string> propertyNames)
         {
@@ -35,6 +50,11 @@ namespace Jasily.ViewModel
             this.PropertyChanged?.Invoke(this, propertyNames);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="eventArgs"></param>
+        /// <exception cref="ArgumentNullException">throw when <paramref name="eventArgs"/> is null.</exception>
         [NotifyPropertyChangedInvocator]
         protected void NotifyPropertyChanged([NotNull, ItemNotNull] params PropertyChangedEventArgs[] eventArgs)
         {
@@ -42,6 +62,11 @@ namespace Jasily.ViewModel
             this.PropertyChanged?.Invoke(this, eventArgs);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="propertyNames"></param>
+        /// <exception cref="ArgumentNullException">throw when <paramref name="propertyNames"/> is null.</exception>
         [NotifyPropertyChangedInvocator]
         protected void NotifyPropertyChanged([NotNull, ItemNotNull] IEnumerable<PropertyChangedEventArgs> propertyNames)
         {
@@ -49,6 +74,15 @@ namespace Jasily.ViewModel
             this.PropertyChanged?.Invoke(this, propertyNames);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="field"></param>
+        /// <param name="newValue"></param>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">throw when <paramref name="propertyName"/> is null.</exception>
         [NotifyPropertyChangedInvocator]
         protected bool ChangeModelProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = "")
         {
@@ -58,6 +92,9 @@ namespace Jasily.ViewModel
             return true;
         }
 
+        /// <summary>
+        /// Sets <see cref="PropertyChanged"/> to null.
+        /// </summary>
         protected void ClearPropertyChangedInvocationList() => this.PropertyChanged = null;
     }
 }
