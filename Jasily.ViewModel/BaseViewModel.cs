@@ -12,7 +12,9 @@ namespace Jasily.ViewModel
     public class BaseViewModel : NotifyPropertyChangedObject
     {
         /// <summary>
-        /// Raise <see cref="INotifyPropertyChanged.PropertyChanged"/> with all properties that has attribute <see cref="ModelPropertyAttribute"/>
+        /// Raise <see cref="INotifyPropertyChanged.PropertyChanged"/> with all properties 
+        /// that has attribute <see cref="ModelPropertyAttribute"/> 
+        /// in this instance.
         /// </summary>
         public void RefreshProperties()
         { 
@@ -20,7 +22,9 @@ namespace Jasily.ViewModel
         }
 
         /// <summary>
-        /// Raise <see cref="INotifyPropertyChanged.PropertyChanged"/> with all properties that has attribute <see cref="ModelPropertyAttribute"/>
+        /// Raise <see cref="INotifyPropertyChanged.PropertyChanged"/> with all properties 
+        /// that has specials group attribute <see cref="ModelPropertyAttribute"/>
+        /// in this instance.
         /// </summary>
         public void RefreshProperties(int group)
         {
