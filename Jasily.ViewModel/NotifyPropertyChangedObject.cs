@@ -155,7 +155,8 @@ namespace Jasily.ViewModel
 
         private class PropertyChangedNotificationBlocker : IDisposable
         {
-            private NotifyPropertyChangedObject _notifyPropertyChangedObject;
+            private readonly NotifyPropertyChangedObject _notifyPropertyChangedObject;
+            public readonly List<PropertyChangedEventArgs> _eventArgsList = new List<PropertyChangedEventArgs>();
 
             public PropertyChangedNotificationBlocker(NotifyPropertyChangedObject notifyPropertyChangedObject)
             {
@@ -163,38 +164,37 @@ namespace Jasily.ViewModel
                 this._notifyPropertyChangedObject._blocker = this;
             }
 
-            public List<PropertyChangedEventArgs> Properties { get; } = new List<PropertyChangedEventArgs>();
 
             public void Add(string propertyName)
             {
                 Debug.Assert(propertyName != null);
-                this.Properties.Add(new PropertyChangedEventArgs(propertyName));
+                this._eventArgsList.Add(new PropertyChangedEventArgs(propertyName));
             }
 
             public void Add(IEnumerable<string> propertyNames)
             {
                 Debug.Assert(propertyNames != null);
-                this.Properties.AddRange(propertyNames.Select(z => new PropertyChangedEventArgs(z)));
+                this._eventArgsList.AddRange(propertyNames.Select(z => new PropertyChangedEventArgs(z)));
             }
 
             public void Add(PropertyChangedEventArgs eventArgs)
             {
                 Debug.Assert(eventArgs != null);
-                this.Properties.Add(eventArgs);
+                this._eventArgsList.Add(eventArgs);
             }
 
             public void Add(IEnumerable<PropertyChangedEventArgs> eventArgs)
             {
                 Debug.Assert(eventArgs != null);
-                this.Properties.AddRange(eventArgs);
+                this._eventArgsList.AddRange(eventArgs);
             }
 
             public void Dispose()
             {
                 this._notifyPropertyChangedObject._blocker = null;
-                if (this.Properties.Count > 0)
+                if (this._eventArgsList.Count > 0)
                 {
-                    this._notifyPropertyChangedObject.NotifyPropertyChanged(this.Properties);
+                    this._notifyPropertyChangedObject.NotifyPropertyChanged(this._eventArgsList);
                 }
             }
         }
