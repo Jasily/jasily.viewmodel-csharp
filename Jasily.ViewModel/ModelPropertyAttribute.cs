@@ -8,7 +8,7 @@ namespace Jasily.ViewModel
     /// when you call <see cref="BaseViewModel.RefreshProperties"/>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
-    public class ModelPropertyAttribute : Attribute
+    public sealed class ModelPropertyAttribute : Attribute
     {
         public int Group { get; set; }
 
