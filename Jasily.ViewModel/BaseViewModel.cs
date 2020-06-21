@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel;
+using System.Linq;
+
 using Jasily.ViewModel.Internal;
 
 namespace Jasily.ViewModel
@@ -11,8 +13,9 @@ namespace Jasily.ViewModel
         /// in this instance.
         /// </summary>
         public void RefreshProperties()
-        { 
-            this.NotifyPropertyChanged(RefreshPropertiesMapper.FromType(this.GetType()).Properties);
+        {
+            var mapper = RefreshPropertiesMapper.FromType(this.GetType());
+            this.RefreshProperties(mapper.GetPropertiesChangedData());
         }
 
         /// <summary>
@@ -22,7 +25,14 @@ namespace Jasily.ViewModel
         /// </summary>
         public void RefreshProperties(int group)
         {
-            this.NotifyPropertyChanged(RefreshPropertiesMapper.FromType(this.GetType()).GetProperties(group));
+            var mapper = RefreshPropertiesMapper.FromType(this.GetType());
+            this.RefreshProperties(mapper.GetPropertiesChangedData(group));
+        }
+
+        private void RefreshProperties(PropertiesChangedData propertiesChangedData)
+        {
+            propertiesChangedData.InvokeOnNotifyChangedCallbacks(this);
+            this.NotifyPropertyChanged(propertiesChangedData.Properties);
         }
     }
 }

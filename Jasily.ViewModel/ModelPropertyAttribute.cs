@@ -5,7 +5,7 @@ namespace Jasily.ViewModel
 {
     /// <summary>
     /// Indicates that the property should be raises by <see cref="INotifyPropertyChanged.PropertyChanged"/>
-    /// when you call <see cref="BaseViewModel.RefreshProperties"/>.
+    /// when you calling <see cref="BaseViewModel.RefreshProperties"/>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public sealed class ModelPropertyAttribute : Attribute
