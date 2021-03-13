@@ -118,6 +118,8 @@ namespace Jasily.ViewModel
             }
         }
 
+        protected virtual IEqualityComparer<T> GetPropertyValueComparer<T>() => EqualityComparer<T>.Default;
+
         /// <summary>
         /// 
         /// </summary>
@@ -130,7 +132,8 @@ namespace Jasily.ViewModel
         [NotifyPropertyChangedInvocator]
         protected bool ChangeModelProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = "")
         {
-            if (EqualityComparer<T>.Default.Equals(field, newValue)) return false;
+            var comparer = this.GetPropertyValueComparer<T>();
+            if (comparer?.Equals(field, newValue) ?? false) return false;
             field = newValue;
             this.NotifyPropertyChanged(propertyName);
             return true;
