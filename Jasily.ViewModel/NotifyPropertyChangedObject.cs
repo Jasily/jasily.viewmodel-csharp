@@ -156,7 +156,11 @@ namespace Jasily.ViewModel
         protected void ClearPropertyChangedInvocationList() => this.PropertyChanged = null;
 
         /// <summary>
-        /// Block <see cref="PropertyChanged"/> event until <see cref="IDisposable.Dispose"/>.
+        /// Block event <see cref="PropertyChanged"/> until called <see cref="IDisposable.Dispose"/>.
+        /// 
+        /// Note: 
+        ///   - this should only run on the UI thread; 
+        ///   - this is not thread safety;
         /// </summary>
         /// <returns></returns>
         public IDisposable BlockNotifyPropertyChanged()
