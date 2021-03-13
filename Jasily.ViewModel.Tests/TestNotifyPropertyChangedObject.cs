@@ -21,21 +21,73 @@ namespace Jasily.ViewModel.Tests
             CollectionAssert.AreEqual(new[] { "ABC", "123", "456" }, counter.Events);
         }
 
+        class SubClass_1 : NotifyPropertyChangedObject
+        {
+            private int _val;
+
+            public int Val { get => this._val; set => this.ChangeModelProperty(ref this._val, value); }
+        }
+
         [TestMethod]
         public void TestBlockNotifyPropertyChanged()
         {
-            using var counter = new PropertyChangedEventsCounter(this);
+            var obj = new SubClass_1();
+            using var counter = new PropertyChangedEventsCounter(obj);
 
-            using (this.BlockNotifyPropertyChanged())
+            obj.Val = 10;
+            CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
+
+            using (obj.BlockNotifyPropertyChanged())
             {
-                this.NotifyPropertyChanged("ABC");
-                CollectionAssert.AreEqual(Array.Empty<string>(), counter.Events);
+                obj.Val = 11;
+                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
 
-                this.NotifyPropertyChanged("123", "456");
-                CollectionAssert.AreEqual(Array.Empty<string>(), counter.Events);
+                obj.Val = 12;
+                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
+
+                obj.Val = 13;
+                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
             }
 
-            CollectionAssert.AreEqual(new[] { "ABC", "123", "456" }, counter.Events);
+            CollectionAssert.AreEqual(new[] { "Val", "Val", "Val", "Val" }, counter.Events);
+        }
+
+        [TestMethod]
+        public void TestBeginBatchChangeModelProperties()
+        {
+            var obj = new SubClass_1();
+            using var counter = new PropertyChangedEventsCounter(obj);
+
+            obj.Val = 10;
+            CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
+
+            using (obj.BeginBatchChangeModelProperties())
+            {
+                obj.Val = 11;
+                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
+
+                obj.Val = 12;
+                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
+
+                obj.Val = 13;
+                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
+            }
+
+            CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
+
+            using (obj.BeginBatchChangeModelProperties())
+            {
+                obj.Val = 11;
+                CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
+
+                obj.Val = 12;
+                CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
+
+                obj.Val = 13; // back to 13
+                CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
+            }
+
+            CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
         }
     }
 
