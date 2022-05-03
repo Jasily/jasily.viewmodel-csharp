@@ -18,22 +18,17 @@ namespace Jasily.ViewModel.Helpers
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        public static IEnumerable<string> GetPropertyNames<TModel, TValue>(Expression<Func<TModel, TValue>> propertySelector)
+        public static IEnumerable<string> GetPropertyNames<TModel>(Expression<Func<TModel, object>> propertySelector)
         {
             if (propertySelector is null)
             {
                 throw new ArgumentNullException(nameof(propertySelector));
             }
 
-            if (propertySelector.Body is MemberExpression me)
-            {
-                var names = new List<string>();
-                VisitPropertyAccess(me, names);
-                names.Reverse();
-                return names;
-            }
-
-            throw new ArgumentException($"{propertySelector} is not property access expression.");
+            var names = new List<string>();
+            VisitPropertyAccess(propertySelector.Body, names);
+            names.Reverse();
+            return names;
 
             void VisitPropertyAccess(Expression e, List<string> names)
             {
@@ -47,6 +42,10 @@ namespace Jasily.ViewModel.Helpers
                                 throw new ArgumentException($"{propertySelector} is not property access expression.");
                             names.Add(me.Member.Name);
                             e = me.Expression;
+                            break;
+
+                        case ExpressionType.Convert:
+                            e = ((UnaryExpression)e).Operand;
                             break;
 
                         case ExpressionType.Parameter:
