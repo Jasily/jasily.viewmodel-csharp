@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+
 using JetBrains.Annotations;
 
 namespace Jasily.ViewModel.Extensions
 {
-    public static class NotifyPropertyChangedExtensions
+    public static partial class NotifyPropertyChangedExtensions
     {
         public static void Invoke([NotNull] this PropertyChangedEventHandler handler, object sender,
             string propertyName)
