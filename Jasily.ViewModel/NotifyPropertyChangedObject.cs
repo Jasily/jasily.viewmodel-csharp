@@ -7,6 +7,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 
 using Jasily.ViewModel.Extensions;
+using Jasily.ViewModel.Internal;
+
 using JetBrains.Annotations;
 
 namespace Jasily.ViewModel
@@ -157,31 +159,30 @@ namespace Jasily.ViewModel
 
         /// <summary>
         /// Block event <see cref="PropertyChanged"/> until called <see cref="IDisposable.Dispose"/>.
-        /// 
-        /// Note: 
-        ///   - this should only run on the UI thread; 
-        ///   - this is not thread safety;
         /// </summary>
         /// <returns></returns>
+        /// <remarks>
+        /// This is not thread safety;
+        /// This must run on the UI thread;
+        /// </remarks>
         public IDisposable BlockNotifyPropertyChanged()
         {
             if (this._blocker != null)
                 throw new InvalidOperationException();
 
-            return new PropertyChangedNotificationBlocker(this);
+            return _blocker = new PropertyChangedNotificationBlocker(this);
         }
 
-        private class PropertyChangedNotificationBlocker : IDisposable
+        private class PropertyChangedNotificationBlocker : Disposable
         {
-            private readonly NotifyPropertyChangedObject _notifyPropertyChangedObject;
+            private readonly NotifyPropertyChangedObject _obj;
             public readonly List<PropertyChangedEventArgs> _eventArgsList = new List<PropertyChangedEventArgs>();
 
-            public PropertyChangedNotificationBlocker(NotifyPropertyChangedObject notifyPropertyChangedObject)
+            public PropertyChangedNotificationBlocker(NotifyPropertyChangedObject obj)
             {
-                this._notifyPropertyChangedObject = notifyPropertyChangedObject;
-                this._notifyPropertyChangedObject._blocker = this;
+                Debug.Assert(obj != null);
+                this._obj = obj;
             }
-
 
             public void Add(string propertyName)
             {
@@ -207,12 +208,14 @@ namespace Jasily.ViewModel
                 this._eventArgsList.AddRange(eventArgs);
             }
 
-            public void Dispose()
+            protected override void DisposeCore()
             {
-                this._notifyPropertyChangedObject._blocker = null;
+                if (this._obj._blocker != this)
+                    throw new InvalidOperationException();
+                this._obj._blocker = null;
                 if (this._eventArgsList.Count > 0)
                 {
-                    this._notifyPropertyChangedObject.NotifyPropertyChanged(this._eventArgsList);
+                    this._obj.NotifyPropertyChanged(this._eventArgsList);
                 }
             }
         }
@@ -223,12 +226,12 @@ namespace Jasily.ViewModel
         /// 
         /// Also, if a property changed to a new value then change back to the old value, 
         /// the event <see cref="PropertyChanged"/> won't be raises.
-        /// 
-        /// Note: 
-        ///   - this should only run on the UI thread; 
-        ///   - this is not thread safety;
         /// </summary>
         /// <returns></returns>
+        /// <remarks>
+        /// This is not thread safety;
+        /// This must run on the UI thread;
+        /// </remarks>
         public IDisposable BeginBatchChangeModelProperties()
         {
             if (this._propertiesBatchChanges != null)
@@ -237,16 +240,17 @@ namespace Jasily.ViewModel
             return this._propertiesBatchChanges = new PropertiesBatchChanges(this);
         }
 
-        private class PropertiesBatchChanges : IDisposable 
+        private class PropertiesBatchChanges : Disposable
         {
             private readonly List<string> _orderedPropertyNames = new List<string>();
             private readonly Dictionary<string, (object originValue, bool isChanged)> _propertyValues =
                 new Dictionary<string, (object originValue, bool isChanged)>();
-            private NotifyPropertyChangedObject _obj;
+            private readonly NotifyPropertyChangedObject _obj;
 
-            public PropertiesBatchChanges(NotifyPropertyChangedObject notifyPropertyChangedObject)
+            public PropertiesBatchChanges(NotifyPropertyChangedObject obj)
             {
-                this._obj = notifyPropertyChangedObject;
+                Debug.Assert(obj != null);
+                this._obj = obj;
             }
 
             public void AddChange<T>(string propertyName, T oldValue, T newValue, IEqualityComparer<T> comparer)
@@ -266,19 +270,12 @@ namespace Jasily.ViewModel
                     .Where(z => this._propertyValues[z].isChanged);
             }
 
-            public void Dispose()
+            protected override void DisposeCore()
             {
-                var obj = this._obj;
-                if (obj == null)
-                    throw new ObjectDisposedException(this.ToString());
-                this._obj = null;
-
-                var self = obj._propertiesBatchChanges;
-                if (self != this)
+                if (this._obj._propertiesBatchChanges != this)
                     throw new InvalidOperationException();
-                obj._propertiesBatchChanges = null;
-
-                obj.NotifyPropertyChanged(this.GetChangedPropertyNames());
+                this._obj._propertiesBatchChanges = null;
+                this._obj.NotifyPropertyChanged(this.GetChangedPropertyNames());
             }
         }
     }
