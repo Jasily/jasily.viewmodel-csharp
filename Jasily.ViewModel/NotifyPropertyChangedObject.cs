@@ -150,13 +150,10 @@ namespace Jasily.ViewModel
         /// </summary>
         /// <returns></returns>
         /// <remarks>
-        /// This should run on the UI thread, or user specify a UI <see cref="SynchronizationContext"/> to raise the <see cref="INotifyPropertyChanged.PropertyChanged"/>;
+        /// This should run on the UI thread, or user specify a <paramref name="executor"/> to invoke the <see cref="INotifyPropertyChanged.PropertyChanged"/>;
         /// </remarks>
-        public IDisposable BlockNotifyPropertyChanged(SynchronizationContext synchronizationContext = default)
+        public IDisposable BlockNotifyPropertyChanged(Action<Action> executor = default)
         {
-            if (synchronizationContext == null)
-                synchronizationContext = SynchronizationContext.Current;
-
             PropertyChangedBlocker blocker = null;
 
             while (true)
@@ -171,7 +168,7 @@ namespace Jasily.ViewModel
                 }
 
                 if (blocker == null)
-                    blocker = new PropertyChangedBlocker(this, synchronizationContext);
+                    blocker = new PropertyChangedBlocker(this, executor);
 
                 Interlocked.CompareExchange(ref this._invoker, blocker, this);
             }
@@ -179,16 +176,16 @@ namespace Jasily.ViewModel
 
         private class PropertyChangedBlocker : Disposable, INotifyPropertyChangedInvoker
         {
-            private static readonly SynchronizationContext s_SynchronizationContext = new SynchronizationContext();
+            private static readonly Action<Action> s_Executor = a => a.Invoke();
             private readonly NotifyPropertyChangedObject _obj;
-            private readonly SynchronizationContext _synchronizationContext;
+            private readonly Action<Action> _executor;
             public readonly BlockingCollection<(object, PropertyChangedEventArgs)> _eventArgsLists = new BlockingCollection<(object, PropertyChangedEventArgs)>();
 
-            public PropertyChangedBlocker(NotifyPropertyChangedObject obj, SynchronizationContext synchronizationContext)
+            public PropertyChangedBlocker(NotifyPropertyChangedObject obj, Action<Action> executor)
             {
                 Debug.Assert(obj != null);
                 this._obj = obj;
-                this._synchronizationContext = synchronizationContext;
+                this._executor = executor;
                 this.References = new DisposableReferences(this);
             }
 
@@ -205,7 +202,7 @@ namespace Jasily.ViewModel
 
                 if (eventArgsList.Count > 0)
                 {
-                    (_synchronizationContext ?? s_SynchronizationContext).Send(_ =>
+                    (_executor ?? s_Executor)(() =>
                     {
                         var invoker = this._obj._invoker;
                         Debug.Assert(invoker != this);
@@ -213,7 +210,7 @@ namespace Jasily.ViewModel
                         {
                             invoker.InvokePropertyChanged(sender, e);
                         }
-                    }, default);
+                    });
                 }
             }
 
@@ -221,12 +218,12 @@ namespace Jasily.ViewModel
             {
                 if (!this._eventArgsLists.TryAdd((sender, e)))
                 {
-                    (_synchronizationContext ?? s_SynchronizationContext).Send(_ =>
+                    (_executor ?? s_Executor)(() =>
                     {
                         var invoker = this._obj._invoker;
                         Debug.Assert(invoker != this);
                         invoker.InvokePropertyChanged(sender, e);
-                    }, default);
+                    });
                 }
             }
         }
