@@ -36,7 +36,7 @@ namespace Jasily.ViewModel.Extensions
 
             var propertyNames = PropertySelectorHelper.GetPropertyNames(propertySelector).ToArray();
             var listener = new PropertiesListener(propertyNames);
-            listener.OnPropertyChanged += v => callback(v);
+            listener.OnPropertyChanged += (o, v) => callback(v);
             listener.Subscribe(model);
             return listener;
         }
@@ -50,7 +50,7 @@ namespace Jasily.ViewModel.Extensions
             if (callback is null) throw new ArgumentNullException(nameof(callback));
 
             var listener = new PropertiesListener(propertyNames);
-            listener.OnPropertyChanged += v => callback(v);
+            listener.OnPropertyChanged += (o, v) => callback(v);
             listener.Subscribe(model);
             return listener;
         }

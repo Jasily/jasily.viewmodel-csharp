@@ -69,7 +69,7 @@ namespace Jasily.ViewModel.Helpers
                 listeners[i].Subscribe(listeners[i - 1].GetPropertyValue());
             }
 
-            this.OnPropertyChanged?.Invoke(listeners[^1].GetPropertyValue());
+            this.OnPropertyChanged?.Invoke(this, listeners[^1].GetPropertyValue());
         }
 
         public void Dispose()
@@ -78,7 +78,7 @@ namespace Jasily.ViewModel.Helpers
             this.Unsubscribe();
         }
 
-        public event Action<object> OnPropertyChanged;
+        public event EventHandler<object> OnPropertyChanged;
 
         interface IInternalPropertiesListener
         {
