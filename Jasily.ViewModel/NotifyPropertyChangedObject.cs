@@ -126,7 +126,6 @@ namespace Jasily.ViewModel
         {
             var comparer = this.GetPropertyValueComparer<T>();
             if (comparer?.Equals(field, newValue) ?? false) return false;
-            var oldValue = field;
             field = newValue;
             this.NotifyPropertyChanged(propertyName);
             return true;
@@ -142,7 +141,7 @@ namespace Jasily.ViewModel
         /// </summary>
         /// <returns></returns>
         /// <remarks>
-        /// This should run on the UI thread, or user specify a <paramref name="executor"/> to invoke the <see cref="INotifyPropertyChanged.PropertyChanged"/>;
+        /// This should run on the UI thread, or user can specify a <paramref name="executor"/> to raises the <see cref="INotifyPropertyChanged.PropertyChanged"/> event;
         /// </remarks>
         public IDisposable BlockNotifyPropertyChanged(Action<Action> executor = default)
         {
