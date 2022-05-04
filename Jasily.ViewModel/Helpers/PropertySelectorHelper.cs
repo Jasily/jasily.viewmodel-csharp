@@ -45,6 +45,7 @@ namespace Jasily.ViewModel.Helpers
                             break;
 
                         case ExpressionType.Convert:
+                        case ExpressionType.TypeAs:
                             e = ((UnaryExpression)e).Operand;
                             break;
 
