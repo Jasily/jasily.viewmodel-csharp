@@ -56,25 +56,35 @@ namespace Jasily.ViewModel.Tests.Extensions
         public void TestListenOnDeepProperty()
         {
             var values = new List<object>();
-            var s = new Simple3();
+            var s = new Simple3
+            {
+                Simple2Value = new Simple2 
+                { 
+                    Simple1Value = new Simple1
+                    {
+                        PropValue = 15
+                    }
+                }
+            };
             using (s.ListenPropertyChanged(x => x.Simple2Value.Simple1Value.PropValue, values.Add))
             {
                 RunMethods(s);
                 CollectionAssert.AreEqual(
                     new object[]
                     {
-                    null,
-                    7,
-                    1,
-                    2,
-                    3,
-                    null,
-                    6,
-                    null,
-                    0,
-                    1,
-                    2,
-                    3
+                        77,
+                        null,
+                        7,
+                        1,
+                        2,
+                        3,
+                        null,
+                        6,
+                        null,
+                        0,
+                        1,
+                        2,
+                        3
                     },
                     values);
             }
@@ -85,6 +95,7 @@ namespace Jasily.ViewModel.Tests.Extensions
 
             static void RunMethods(Simple3 s)
             {
+                s.Simple2Value.Simple1Value.PropValue = 77;
                 s.Simple2Value = new Simple2 { };
                 s.Simple2Value.Simple1Value = new Simple1 { PropValue = 7 };
                 s.Simple2Value.Simple1Value.PropValue = 1;

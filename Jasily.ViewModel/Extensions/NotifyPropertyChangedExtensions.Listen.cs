@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 using Jasily.ViewModel.Helpers;
@@ -61,9 +62,14 @@ namespace Jasily.ViewModel.Extensions
 
             public void Subscribe(TModel obj)
             {
-                if (_listeners.Length > 0)
+                var listeners = _listeners;
+                if (listeners.Length > 0)
                 {
-                    _listeners[0].Subscribe(obj);
+                    listeners[0].Subscribe(obj);
+                    for (var i = 1; i < listeners.Length; i++)
+                    {
+                        listeners[i].Subscribe(listeners[i - 1].GetPropertyValue());
+                    }
                 }
             }
 
