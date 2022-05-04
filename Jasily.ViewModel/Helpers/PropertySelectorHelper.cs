@@ -18,7 +18,7 @@ namespace Jasily.ViewModel.Helpers
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        public static IEnumerable<string> GetPropertyNames<TModel>(Expression<Func<TModel, object>> propertySelector)
+        public static string[] GetPropertyNames<TModel>(Expression<Func<TModel, object>> propertySelector)
         {
             if (propertySelector is null)
             {
@@ -28,7 +28,7 @@ namespace Jasily.ViewModel.Helpers
             var names = new List<string>();
             VisitPropertyAccess(propertySelector.Body, names);
             names.Reverse();
-            return names;
+            return names.ToArray();
 
             void VisitPropertyAccess(Expression e, List<string> names)
             {

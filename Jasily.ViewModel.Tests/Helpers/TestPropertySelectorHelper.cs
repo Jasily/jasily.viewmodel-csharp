@@ -27,7 +27,7 @@ namespace Jasily.ViewModel.Tests.Helpers
         public void TestGetPropertyNames()
         {
             var propNames = PropertySelectorHelper.GetPropertyNames<X>(x => x.YP.YA.YA.YA);
-            CollectionAssert.AreEqual(new[] { nameof(X.YP), nameof(Y.YA), nameof(Y.YA), nameof(Y.YA) }, propNames.ToArray());
+            CollectionAssert.AreEqual(new[] { nameof(X.YP), nameof(Y.YA), nameof(Y.YA), nameof(Y.YA) }, propNames);
         }
     }
 }
