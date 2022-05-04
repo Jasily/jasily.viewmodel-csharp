@@ -51,44 +51,6 @@ namespace Jasily.ViewModel.Tests
 
             CollectionAssert.AreEqual(new[] { "Val", "Val", "Val", "Val" }, counter.Events);
         }
-
-        [TestMethod]
-        public void TestBeginBatchChangeModelProperties()
-        {
-            var obj = new SubClass_1();
-            using var counter = new PropertyChangedEventsCounter(obj);
-
-            obj.Val = 10;
-            CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
-
-            using (obj.BeginBatchChangeModelProperties())
-            {
-                obj.Val = 11;
-                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
-
-                obj.Val = 12;
-                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
-
-                obj.Val = 13;
-                CollectionAssert.AreEqual(new[] { "Val" }, counter.Events);
-            }
-
-            CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
-
-            using (obj.BeginBatchChangeModelProperties())
-            {
-                obj.Val = 11;
-                CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
-
-                obj.Val = 12;
-                CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
-
-                obj.Val = 13; // back to 13
-                CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
-            }
-
-            CollectionAssert.AreEqual(new[] { "Val", "Val" }, counter.Events);
-        }
     }
 
     public class PropertyChangedEventsCounter : IDisposable
