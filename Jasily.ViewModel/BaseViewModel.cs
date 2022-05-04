@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 
 using Jasily.ViewModel.Internal;
@@ -29,10 +31,10 @@ namespace Jasily.ViewModel
             this.RefreshProperties(mapper.GetPropertiesChangedData(group));
         }
 
-        private void RefreshProperties(PropertiesChangedData propertiesChangedData)
+        private void RefreshProperties(IReadOnlyCollection<PropertyChangedEventArgs> eventArgsList)
         {
-            propertiesChangedData.InvokeOnNotifyChangedCallbacks(this);
-            this.NotifyPropertyChanged(propertiesChangedData.Properties);
+            Debug.Assert(eventArgsList != null);
+            this.NotifyPropertyChanged(eventArgsList);
         }
     }
 }

@@ -16,19 +16,5 @@ namespace Jasily.ViewModel.Internal
         }
 
         public IReadOnlyCollection<PropertyChangedEventArgs> Properties { get; }
-
-        internal void InvokeOnNotifyChangedCallbacks(object instance)
-        {
-            foreach (var property in this.Properties)
-            {
-                if (this._mapper.OnNotifyChangedCallbacks.TryGetValue(property.PropertyName, out var cbs))
-                {
-                    foreach (var cb in cbs)
-                    {
-                        cb.Value.Invoke(instance);
-                    }
-                }
-            }
-        }
     }
 }
