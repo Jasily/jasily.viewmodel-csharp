@@ -22,5 +22,10 @@ namespace Jasily.ViewModel.Internal
         }
 
         protected abstract void DisposeCore();
+
+        protected void ThrowIfDisposed()
+        {
+            if (this.IsDisposed) throw new ObjectDisposedException(this.ToString());
+        }
     }
 }
