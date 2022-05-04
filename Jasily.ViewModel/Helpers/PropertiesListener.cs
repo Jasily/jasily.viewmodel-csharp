@@ -23,9 +23,15 @@ namespace Jasily.ViewModel.Helpers
 
         public void Subscribe(object obj)
         {
+            if (obj is null) throw new ArgumentNullException(nameof(obj));
+
             Debug.Assert(this._listeners.Length > 0);
 
             var listeners = _listeners;
+
+            if (listeners[0].IsSubscribed)
+                throw new InvalidOperationException("cannot subscribe again.");
+
             for (var i = 0; i < listeners.Length; i++)
             {
                 listeners[i].Subscribe(i == 0 ? obj : listeners[i - 1].GetPropertyValue());
@@ -115,21 +121,18 @@ namespace Jasily.ViewModel.Helpers
                 return null;
             }
 
+            public bool IsSubscribed => _wr != default;
+
             public void Subscribe(object obj)
             {
+                Debug.Assert(_wr is null);
+
                 if (obj is INotifyPropertyChanged npc)
                 {
                     npc.PropertyChanged += this.OnPropertyChanged;
                 }
 
-                if (_wr is null)
-                {
-                    _wr = new WeakReference<object>(obj);
-                }
-                else
-                {
-                    _wr.SetTarget(obj);
-                }
+                _wr = new WeakReference<object>(obj);
             }
 
             public void Unsubscribe()
@@ -139,7 +142,7 @@ namespace Jasily.ViewModel.Helpers
                     npc.PropertyChanged -= this.OnPropertyChanged;
                 }
 
-                _wr?.SetTarget(null);
+                _wr = default;
             }
 
             public void Dispose()
