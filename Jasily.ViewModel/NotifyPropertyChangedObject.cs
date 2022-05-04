@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -16,11 +17,18 @@ namespace Jasily.ViewModel
     /// <summary>
     /// The base class for interface <see cref="INotifyPropertyChanged"/>.
     /// </summary>
-    public class NotifyPropertyChangedObject : INotifyPropertyChanged
+    public class NotifyPropertyChangedObject : INotifyPropertyChanged, INotifyPropertyChangedInvoker
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        private PropertyChangedNotificationBlocker _blocker;
+        private INotifyPropertyChangedInvoker _invoker;
         private PropertiesBatchChanges _propertiesBatchChanges;
+
+        public NotifyPropertyChangedObject()
+        {
+            _invoker = this;
+        }
+
+        void INotifyPropertyChangedInvoker.InvokePropertyChanged(object sender, PropertyChangedEventArgs e) => this.PropertyChanged?.Invoke(sender, e);
 
         /// <summary>
         /// 
@@ -31,16 +39,8 @@ namespace Jasily.ViewModel
         protected void NotifyPropertyChanged([NotNull, CallerMemberName] string propertyName = "")
         {
             if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
-            
-            if (this._blocker != null)
-            {
-                this._blocker.Add(propertyName);
-            }
-            else
-            {
-                this.PropertyChanged?.Invoke(this, propertyName);
-            }
-            
+
+            this._invoker.InvokePropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
 
         /// <summary>
@@ -53,13 +53,10 @@ namespace Jasily.ViewModel
         {
             if (propertyNames == null) throw new ArgumentNullException(nameof(propertyNames));
 
-            if (this._blocker != null)
+            var invoker = this._invoker;
+            for (var i = 0; i < propertyNames.Length; i++)
             {
-                this._blocker.Add(propertyNames);
-            }
-            else
-            {
-                this.PropertyChanged?.Invoke(this, propertyNames);
+                invoker.InvokePropertyChanged(this, new PropertyChangedEventArgs(propertyNames[i]));
             }
         }
 
@@ -73,13 +70,10 @@ namespace Jasily.ViewModel
         {
             if (propertyNames == null) throw new ArgumentNullException(nameof(propertyNames));
 
-            if (this._blocker != null)
+            var invoker = this._invoker;
+            foreach (var property in propertyNames)
             {
-                this._blocker.Add(propertyNames);
-            }
-            else
-            {
-                this.PropertyChanged?.Invoke(this, propertyNames);
+                invoker.InvokePropertyChanged(this, new PropertyChangedEventArgs(property));
             }
         }
 
@@ -93,13 +87,10 @@ namespace Jasily.ViewModel
         {
             if (eventArgs == null) throw new ArgumentNullException(nameof(eventArgs));
 
-            if (this._blocker != null)
+            var invoker = this._invoker;
+            for (var i = 0; i < eventArgs.Length; i++)
             {
-                this._blocker.Add(eventArgs);
-            }
-            else
-            {
-                this.PropertyChanged?.Invoke(this, eventArgs);
+                invoker.InvokePropertyChanged(this, eventArgs[i]);
             }
         }
 
@@ -113,13 +104,10 @@ namespace Jasily.ViewModel
         {
             if (eventArgs == null) throw new ArgumentNullException(nameof(eventArgs));
 
-            if (this._blocker != null)
+            var invoker = this._invoker;
+            foreach (var eventArg in eventArgs)
             {
-                this._blocker.Add(eventArgs);
-            }
-            else
-            {
-                this.PropertyChanged?.Invoke(this, eventArgs);
+                invoker.InvokePropertyChanged(this, eventArg);
             }
         }
 
@@ -162,60 +150,83 @@ namespace Jasily.ViewModel
         /// </summary>
         /// <returns></returns>
         /// <remarks>
-        /// This is not thread safety;
-        /// This must run on the UI thread;
+        /// This should run on the UI thread, or user specify a UI <see cref="SynchronizationContext"/> to raise the <see cref="INotifyPropertyChanged.PropertyChanged"/>;
         /// </remarks>
-        public IDisposable BlockNotifyPropertyChanged()
+        public IDisposable BlockNotifyPropertyChanged(SynchronizationContext synchronizationContext = default)
         {
-            if (this._blocker != null)
-                throw new InvalidOperationException();
+            if (synchronizationContext == null)
+                synchronizationContext = SynchronizationContext.Current;
 
-            return _blocker = new PropertyChangedNotificationBlocker(this);
+            PropertyChangedBlocker blocker = null;
+
+            while (true)
+            {
+                var invoker = this._invoker; // don't need memory barrier
+
+                Debug.Assert(ReferenceEquals(invoker, this) || invoker is PropertyChangedBlocker);
+
+                if ((invoker as PropertyChangedBlocker)?.References.TryGetReference(out var disposable) == true)
+                {
+                    return disposable;
+                }
+
+                if (blocker == null)
+                    blocker = new PropertyChangedBlocker(this, synchronizationContext);
+
+                Interlocked.CompareExchange(ref this._invoker, blocker, this);
+            }
         }
 
-        private class PropertyChangedNotificationBlocker : Disposable
+        private class PropertyChangedBlocker : Disposable, INotifyPropertyChangedInvoker
         {
+            private static readonly SynchronizationContext s_SynchronizationContext = new SynchronizationContext();
             private readonly NotifyPropertyChangedObject _obj;
-            public readonly List<PropertyChangedEventArgs> _eventArgsList = new List<PropertyChangedEventArgs>();
+            private readonly SynchronizationContext _synchronizationContext;
+            public readonly BlockingCollection<(object, PropertyChangedEventArgs)> _eventArgsLists = new BlockingCollection<(object, PropertyChangedEventArgs)>();
 
-            public PropertyChangedNotificationBlocker(NotifyPropertyChangedObject obj)
+            public PropertyChangedBlocker(NotifyPropertyChangedObject obj, SynchronizationContext synchronizationContext)
             {
                 Debug.Assert(obj != null);
                 this._obj = obj;
+                this._synchronizationContext = synchronizationContext;
+                this.References = new DisposableReferences(this);
             }
 
-            public void Add(string propertyName)
-            {
-                Debug.Assert(propertyName != null);
-                this._eventArgsList.Add(new PropertyChangedEventArgs(propertyName));
-            }
-
-            public void Add(IEnumerable<string> propertyNames)
-            {
-                Debug.Assert(propertyNames != null);
-                this._eventArgsList.AddRange(propertyNames.Select(z => new PropertyChangedEventArgs(z)));
-            }
-
-            public void Add(PropertyChangedEventArgs eventArgs)
-            {
-                Debug.Assert(eventArgs != null);
-                this._eventArgsList.Add(eventArgs);
-            }
-
-            public void Add(IEnumerable<PropertyChangedEventArgs> eventArgs)
-            {
-                Debug.Assert(eventArgs != null);
-                this._eventArgsList.AddRange(eventArgs);
-            }
+            public DisposableReferences References { get; }
 
             protected override void DisposeCore()
             {
-                if (this._obj._blocker != this)
+                if (Interlocked.CompareExchange(ref this._obj._invoker, this._obj, this) != this)
                     throw new InvalidOperationException();
-                this._obj._blocker = null;
-                if (this._eventArgsList.Count > 0)
+
+                _eventArgsLists.CompleteAdding();
+
+                var eventArgsList = _eventArgsLists.GetConsumingEnumerable().ToList();
+
+                if (eventArgsList.Count > 0)
                 {
-                    this._obj.NotifyPropertyChanged(this._eventArgsList);
+                    (_synchronizationContext ?? s_SynchronizationContext).Send(_ =>
+                    {
+                        var invoker = this._obj._invoker;
+                        Debug.Assert(invoker != this);
+                        foreach (var (sender, e) in eventArgsList)
+                        {
+                            invoker.InvokePropertyChanged(sender, e);
+                        }
+                    }, default);
+                }
+            }
+
+            public void InvokePropertyChanged(object sender, PropertyChangedEventArgs e)
+            {
+                if (!this._eventArgsLists.TryAdd((sender, e)))
+                {
+                    (_synchronizationContext ?? s_SynchronizationContext).Send(_ =>
+                    {
+                        var invoker = this._obj._invoker;
+                        Debug.Assert(invoker != this);
+                        invoker.InvokePropertyChanged(sender, e);
+                    }, default);
                 }
             }
         }
