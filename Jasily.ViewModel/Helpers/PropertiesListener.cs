@@ -12,6 +12,7 @@ namespace Jasily.ViewModel.Helpers
     public class PropertiesListener : PropertiesListener.IInternalPropertiesListener, IDisposable
     {
         private readonly PropertyListener[] _listeners;
+        private WeakReference<object> _weakref;
 
         public PropertiesListener(IEnumerable<string> propertyNames)
         {
@@ -21,20 +22,38 @@ namespace Jasily.ViewModel.Helpers
                 throw new ArgumentException("properties is empty");
         }
 
+        private static IEnumerable<object> GetPropertiesValues(object obj, IEnumerable<string> propertyNames)
+        {
+            foreach (var propertyName in propertyNames)
+            {
+                if (obj is null)
+                {
+                    yield return null;
+                }
+                else
+                {
+                    yield return obj = GetPropertyValueHelper.GetPropertyValue(obj, propertyName);
+                }
+            }
+        }
+
         public void Subscribe(object obj)
         {
-            if (obj is null) throw new ArgumentNullException(nameof(obj));
+            if (obj is null) 
+                throw new ArgumentNullException(nameof(obj));
+            if (_weakref != null)
+                throw new InvalidOperationException("cannot subscribe again.");
+
+            _weakref = new WeakReference<object>(obj);
 
             Debug.Assert(this._listeners.Length > 0);
 
-            var listeners = _listeners;
-
-            if (listeners[0].IsSubscribed)
-                throw new InvalidOperationException("cannot subscribe again.");
-
-            for (var i = 0; i < listeners.Length; i++)
+            foreach (var listener in this._listeners)
             {
-                listeners[i].Subscribe(i == 0 ? obj : listeners[i - 1].GetPropertyValue());
+                listener.Subscribe(obj);
+                obj = GetPropertyValueHelper.GetPropertyValue(obj, listener.PropertyName);
+                if (obj is null)
+                    break;
             }
         }
 
@@ -46,30 +65,36 @@ namespace Jasily.ViewModel.Helpers
             {
                 listener.Unsubscribe();
             }
+
+            _weakref = null;
         }
 
         void IInternalPropertiesListener.OnPropertyChanged(PropertyListener listener)
         {
             Debug.Assert(listener != null);
             Debug.Assert(this._listeners.Length > 0);
+            Debug.Assert(_weakref != null);
+
+            if (!_weakref.TryGetTarget(out var obj))
+            {
+                // source
+                this.Unsubscribe();
+                return;
+            }
 
             var index = Array.IndexOf(_listeners, listener);
             Debug.Assert(index >= 0);
 
-            // unsubscribe changed
             var listeners = _listeners;
-            for (var i = listeners.Length - 1; i > index; i--)
-            {
-                listeners[i].Unsubscribe();
-            }
 
             // resubscribe
-            for (var i = index + 1; i < listeners.Length; i++)
+            var values = GetPropertiesValues(obj, listeners.Select(x => x.PropertyName)).ToList();
+            for (var i = 1; i < listeners.Length; i++)
             {
-                listeners[i].Subscribe(listeners[i - 1].GetPropertyValue());
+                listeners[i].Resubscribe(values[i - 1]);
             }
 
-            this.OnPropertyChanged?.Invoke(this, listeners[^1].GetPropertyValue());
+            this.OnPropertyChanged?.Invoke(this, values[^1]);
         }
 
         public void Dispose()
@@ -85,71 +110,65 @@ namespace Jasily.ViewModel.Helpers
             void OnPropertyChanged(PropertyListener listener);
         }
 
-        class PropertyListener : IDisposable
+        class PropertyListener : Disposable
         {
-            private readonly string _propertyName;
+            public readonly string PropertyName;
             private readonly IInternalPropertiesListener _propertiesListener;
-            private WeakReference<object> _wr;
+            private WeakReference<object> _weakref;
 
             public PropertyListener(string propertyName, IInternalPropertiesListener propertiesListener)
             {
                 if (propertyName is null) throw new ArgumentNullException(nameof(propertyName));
 
-                this._propertyName = propertyName;
+                this.PropertyName = propertyName;
                 this._propertiesListener = propertiesListener;
             }
 
             private void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
             {
-                if (e?.PropertyName != _propertyName)
+                if (e?.PropertyName != PropertyName)
                     return;
 
                 this._propertiesListener.OnPropertyChanged(this);
             }
 
-            /// <summary>
-            /// Get property value from subscribed object.
-            /// </summary>
-            /// <returns></returns>
-            public object GetPropertyValue()
+            public void Resubscribe(object obj)
             {
-                if (_wr?.TryGetTarget(out var npc) == true)
+                if (_weakref?.TryGetTarget(out var o) != true || !ReferenceEquals(o, obj))
                 {
-                    return GetPropertyValueHelper.GetPropertyValue(npc, _propertyName);
+                    Unsubscribe();
+                    Subscribe(obj);
                 }
-
-                return null;
             }
-
-            public bool IsSubscribed => _wr != default;
 
             public void Subscribe(object obj)
             {
-                Debug.Assert(_wr is null);
+                Debug.Assert(_weakref is null);
+
+                this.ThrowIfDisposed();
+
+                if (obj is null)
+                    return;
 
                 if (obj is INotifyPropertyChanged npc)
                 {
                     npc.PropertyChanged += this.OnPropertyChanged;
                 }
 
-                _wr = new WeakReference<object>(obj);
+                _weakref = new WeakReference<object>(obj);
             }
 
             public void Unsubscribe()
             {
-                if (_wr?.TryGetTarget(out var o) == true && o is INotifyPropertyChanged npc)
+                if (_weakref?.TryGetTarget(out var o) == true && o is INotifyPropertyChanged npc)
                 {
                     npc.PropertyChanged -= this.OnPropertyChanged;
                 }
 
-                _wr = default;
+                _weakref = null;
             }
 
-            public void Dispose()
-            {
-                this.Unsubscribe();
-                _wr = null;
-            }
+            protected override void DisposeCore() => this.Unsubscribe();
         }
     }
 }
