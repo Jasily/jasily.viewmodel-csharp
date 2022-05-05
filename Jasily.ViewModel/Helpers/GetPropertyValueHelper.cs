@@ -8,20 +8,13 @@ namespace Jasily.ViewModel.Helpers
     public static class GetPropertyValueHelper
     {
         /// <summary>
-        /// User can special a callback to get property value if they want, for example, FastMember or compiled expression.
-        /// </summary>
-        public static Func<object, string, object> GetPropertyValueCallback { get; set; }
-
-        /// <summary>
         /// Get property value from <paramref name="obj"/>.
-        /// 
-        /// If <see cref="GetPropertyValueCallback"/> is null, use <see cref="PropertyInfo.GetValue(object)"/>.
-        /// The implementation may change in the future.
+        /// If the property does not exists or it does not has getter, return null.
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="propertyName"></param>
         /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"><paramref name="propertyName"/> is null.</exception>
         public static object GetPropertyValue(object obj, string propertyName)
         {
             if (propertyName is null)
@@ -29,65 +22,33 @@ namespace Jasily.ViewModel.Helpers
                 throw new ArgumentNullException(nameof(propertyName));
             }
 
-            if (GetPropertyValueCallback is { } callback)
+            if (obj is null)
             {
-                return callback(obj, propertyName);
+                return null;
             }
 
-            return GetPropertyValueWithReflection(obj, propertyName);
+            return s_Store.GetOrAdd((obj.GetType(), propertyName), s_GetPropertyValueFactory).Invoke(obj);
         }
 
-        private static object GetPropertyValueWithReflection(object obj, string propertyName)
+        private static readonly MethodInfo s_CreateDelegateForGetterMethodInfo =
+            typeof(GetPropertyValueHelper).GetMethod(nameof(CreateDelegateForGetter), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly Func<object, object> s_AlwaysNull = _ => null;
+        private static readonly Func<(Type, string), Func<object, object>> s_GetPropertyValueFactory = key =>
         {
-            if (obj?.GetType().GetProperty(propertyName) is { CanRead: true } property)
+            var (type, propertyName) = key;
+            if (type.GetProperty(propertyName) is { CanRead: true } property)
             {
-                return property.GetValue(obj, null);
+                return (Func<object, object>)s_CreateDelegateForGetterMethodInfo.MakeGenericMethod(type, property.PropertyType)
+                    .Invoke(null, new[] { property.GetGetMethod() });
             }
-
-            return null;
-        }
-
-        /// <summary>
-        /// A helper method for <see cref="GetPropertyValueCallback"/>.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static Func<object, string, object> CreateGetPropertyValueCallbackWithCreateDelegate()
-        {
-            var createDelegateForGetterMethod = 
-                typeof(GetPropertyValueHelper).GetMethod(nameof(CreateDelegateForGetter), BindingFlags.NonPublic | BindingFlags.Static);
-            Debug.Assert(createDelegateForGetterMethod != null);
-
-            Func<object, object> alwaysNull = _ => null;
-
-            Func<(Type, string), Func<object, object>> factory = key =>
-            {
-                var (type, propertyName) = key;
-                if (type.GetProperty(propertyName) is { CanRead: true } property)
-                {
-                    return (Func<object, object>) createDelegateForGetterMethod.MakeGenericMethod(type, property.PropertyType)
-                        .Invoke(null, new [] { property.GetGetMethod() } );
-                }
-                return alwaysNull;
-            };
-
-            var store = new ConcurrentDictionary<(Type, string), Func<object, object>>();
-
-            return (obj, propertyName) =>
-            {
-                if (propertyName is null) 
-                    throw new ArgumentNullException(nameof(propertyName));
-
-                if (obj is null)
-                    return null;
-
-                return store.GetOrAdd((obj.GetType(), propertyName), factory).Invoke(obj);
-            };
-        }
+            return s_AlwaysNull;
+        };
+        private static readonly ConcurrentDictionary<(Type, string), Func<object, object>> s_Store = 
+            new ConcurrentDictionary<(Type, string), Func<object, object>>();
 
         private static Func<object, object> CreateDelegateForGetter<TThis, TProperty>(MethodInfo getter)
         {
-            var func = (Func<TThis, TProperty>)getter.CreateDelegate(typeof(Func<TThis, TProperty>));
+            var func = (Func<TThis, TProperty>)Delegate.CreateDelegate(typeof(Func<TThis, TProperty>), getter);
             return o => func((TThis)o);
         }
     }

@@ -26,16 +26,20 @@ namespace Jasily.ViewModel.Tests.Helpers
             {
                 Value = "14"
             }, nameof(SimpleClass.Value)));
-        }
 
-        [TestMethod]
-        public void TestCreateGetPropertyValueCallbackWithCreateDelegate()
-        {
-           var callback = GetPropertyValueHelper.CreateGetPropertyValueCallbackWithCreateDelegate();
-
-            Assert.AreEqual("15", callback(new SimpleClass
+            Assert.AreEqual("14", GetPropertyValueHelper.GetPropertyValue(new SimpleClass
             {
-                Value = "15"
+                Value = "14"
+            }, nameof(SimpleClass.Value)));
+
+            Assert.AreEqual("14", GetPropertyValueHelper.GetPropertyValue(new SimpleClass
+            {
+                Value = "14"
+            }, nameof(SimpleClass.Value)));
+
+            Assert.AreEqual("14", GetPropertyValueHelper.GetPropertyValue(new SimpleClass
+            {
+                Value = "14"
             }, nameof(SimpleClass.Value)));
         }
     }
