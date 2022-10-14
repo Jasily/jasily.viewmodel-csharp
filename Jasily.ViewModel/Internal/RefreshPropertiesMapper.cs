@@ -37,16 +37,16 @@ namespace Jasily.ViewModel.Internal
 
             this.GroupedProperties = attributes
                 .GroupBy(z => z.attr.Group)
-                .ToDictionary(z => z.Key, z => (IReadOnlyCollection<PropertyChangedEventArgs>)z.Select(x => x.Item2).ToArray());
+                .ToDictionary(z => z.Key, z => (IReadOnlyList<PropertyChangedEventArgs>)z.Select(x => x.Item2).ToArray());
         }
 
-        internal IReadOnlyCollection<PropertyChangedEventArgs> Properties { get; }
+        internal IReadOnlyList<PropertyChangedEventArgs> Properties { get; }
 
-        internal IDictionary<int, IReadOnlyCollection<PropertyChangedEventArgs>> GroupedProperties { get; }
+        internal IDictionary<int, IReadOnlyList<PropertyChangedEventArgs>> GroupedProperties { get; }
 
-        internal IReadOnlyCollection<PropertyChangedEventArgs> GetPropertiesChangedData() => this.Properties;
+        internal IReadOnlyList<PropertyChangedEventArgs> GetProperties() => this.Properties;
 
-        internal IReadOnlyCollection<PropertyChangedEventArgs> GetPropertiesChangedData(int group) =>
+        internal IReadOnlyList<PropertyChangedEventArgs> GetPropertiesByGroup(int group) =>
             this.GroupedProperties.TryGetValue(group, out var v) ? v : Array.Empty<PropertyChangedEventArgs>();
     }
 }

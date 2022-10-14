@@ -1,11 +1,13 @@
 ﻿using System;
 using System.ComponentModel;
 
+using Jasily.ViewModel.Extensions;
+
 namespace Jasily.ViewModel
 {
     /// <summary>
     /// Indicates that the property should be raises by <see cref="INotifyPropertyChanged.PropertyChanged"/>
-    /// when you calling <see cref="BaseViewModel.RefreshProperties"/>.
+    /// when you calling <see cref="NotifyPropertyChangedSourceExtensions.RefreshProperties"/>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public sealed class ModelPropertyAttribute : Attribute
