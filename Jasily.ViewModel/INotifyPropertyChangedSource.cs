@@ -7,6 +7,6 @@ namespace Jasily.ViewModel
 {
     public interface INotifyPropertyChangedSource
     {
-        PropertyChangedEventHandler PropertyChanged { get; }
+        void NotifyPropertyChanged(object sender, PropertyChangedEventArgs e);
     }
 }

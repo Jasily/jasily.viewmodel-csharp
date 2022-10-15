@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 using System.ComponentModel;
-
-using Jasily.ViewModel.Internal;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Jasily.ViewModel.Extensions
 {
@@ -25,15 +23,11 @@ namespace Jasily.ViewModel.Extensions
                 throw new ArgumentNullException(nameof(source));
             }
 
-            var handler = source.PropertyChanged;
-            if (handler is null)
-                return;
-
             var mapper = RefreshPropertiesMapper.FromType(source.GetType());
 
             foreach (var args in mapper.Properties)
             {
-                handler(source, args);
+                source.NotifyPropertyChanged(source, args);
             }
         }
 
@@ -49,15 +43,11 @@ namespace Jasily.ViewModel.Extensions
                 throw new ArgumentNullException(nameof(source));
             }
 
-            var handler = source.PropertyChanged;
-            if (handler is null)
-                return;
-
             var mapper = RefreshPropertiesMapper.FromType(source.GetType());
 
             foreach (var args in mapper.GetPropertiesByGroup(group))
             {
-                handler(source, args);
+                source.NotifyPropertyChanged(source, args);
             }
         }
 
