@@ -5,6 +5,9 @@ using System.Text;
 using System.ComponentModel;
 
 using Jasily.ViewModel.Internal;
+using System.Collections.Concurrent;
+using System.Reflection;
+using System.Linq;
 
 namespace Jasily.ViewModel.Extensions
 {
@@ -28,7 +31,7 @@ namespace Jasily.ViewModel.Extensions
 
             var mapper = RefreshPropertiesMapper.FromType(source.GetType());
 
-            foreach (var args in mapper.GetProperties())
+            foreach (var args in mapper.Properties)
             {
                 handler(source, args);
             }
@@ -56,6 +59,41 @@ namespace Jasily.ViewModel.Extensions
             {
                 handler(source, args);
             }
+        }
+
+        internal class RefreshPropertiesMapper
+        {
+            private static readonly ConcurrentDictionary<Type, RefreshPropertiesMapper> s_Cache
+                = new ConcurrentDictionary<Type, RefreshPropertiesMapper>();
+            private static readonly Func<Type, RefreshPropertiesMapper> s_Factory = Create;
+
+            public static RefreshPropertiesMapper FromType(Type type) => s_Cache.GetOrAdd(type, s_Factory);
+
+            private static RefreshPropertiesMapper Create(Type type) => new RefreshPropertiesMapper(type);
+
+            RefreshPropertiesMapper(Type type)
+            {
+                var attributes = from property in type.GetRuntimeProperties()
+                                 let attr = property.GetCustomAttribute<ModelPropertyAttribute>()
+                                 where attr != null
+                                 orderby attr.Order
+                                 select (attr, new PropertyChangedEventArgs(property.Name));
+
+                this.Properties = attributes
+                    .Select(z => z.Item2)
+                    .ToArray();
+
+                this.GroupedProperties = attributes
+                    .GroupBy(z => z.attr.Group)
+                    .ToDictionary(z => z.Key, z => (IReadOnlyList<PropertyChangedEventArgs>)z.Select(x => x.Item2).ToArray());
+            }
+
+            internal IReadOnlyList<PropertyChangedEventArgs> Properties { get; }
+
+            internal IDictionary<int, IReadOnlyList<PropertyChangedEventArgs>> GroupedProperties { get; }
+
+            internal IReadOnlyList<PropertyChangedEventArgs> GetPropertiesByGroup(int group) =>
+                this.GroupedProperties.TryGetValue(group, out var v) ? v : Array.Empty<PropertyChangedEventArgs>();
         }
     }
 }
